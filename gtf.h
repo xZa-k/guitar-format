@@ -1,4 +1,4 @@
-enum MusicalNote {
+typedef enum {
     A = 0,
     As, // A sharp
     B,
@@ -11,7 +11,7 @@ enum MusicalNote {
     Fs, // F sharp
     G,
     Gs // G sharp
-};
+} MusicalNote;
 
 enum EventType {
   NoteOn = 0,
@@ -30,8 +30,15 @@ typedef volatile struct {
 typedef struct {
   int bpm;
   int timeSignature;
-} t_BarHeader;
+  int* events;
+} Bar;
 
 typedef struct {
   
 } t_Event;
+
+
+typedef struct {
+  GTabHeader header;
+  Bar* bars;
+} Guitar;
