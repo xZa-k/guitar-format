@@ -1,7 +1,10 @@
 #include "gtf.h"
+#include "basicz.h"
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+
 #define MAGIC_BYTES \
   { 0x47, 0x54, 0x41, 0x42 }
 
@@ -63,9 +66,29 @@ int write_gtab(GTabHeader *header) {
     return 1;
   }
 
+  // Writes the header first
   printf("Header magic: %s\n", header->magic);
   size_t bytes_written = fwrite(header, sizeof(GTabHeader), 1, file);
 
+  TimeSignature timeSig = {4, 4};
+  EventList events = {0};
+  Event event = {11, 0};
+  Event event2 = {13, 10};
+
+  da_append(&events, event);
+  da_append(&events, event2);
+
+
+  Bar bar = {120, timeSig, events};
+  // EventList uses pointers so it must be unpacked first
+  bytes_written = fwrite(&bar, sizeof(Bar) - sizeof(EventList), 1, file);
+  fwrite(&events, sizeof(EventList) - sizeof(Event*), 1, file);
+  fwrite(events.items, sizeof(Event), events.count, file);
+  
+  // for (int i = 0; i < events.count; i++) {
+  // }
+
+  // Unique code to specify the end of the file
   char end_bytes[4] = {0xFF, 0xF1, 0xFF, 0xF1};
   bytes_written = fwrite(end_bytes, sizeof(end_bytes), 1, file);
 
@@ -132,7 +155,7 @@ int main() {
   printf("Hello!\n");
 
   GTabHeader header = {MAGIC_BYTES, {E, A, D, G, B, E}};
-  // write_gtab(&header);
+  write_gtab(&header);
   read_gtab();
   return 0;
 }
