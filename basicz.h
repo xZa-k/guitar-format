@@ -13,6 +13,16 @@
     b = c;                                                                     \
   } while (0)
 
+void memcpy_with_endianness(void *dest, const void *src, size_t size) {
+    const uint8_t *src_ptr = (const uint8_t *)src;
+    uint8_t *dest_ptr = (uint8_t *)dest;
+
+    // Copy bytes in reverse order to perform endianness conversion
+    for (size_t i = 0; i < size; ++i) {
+        dest_ptr[size - 1 - i] = src_ptr[i];
+    }
+}
+
 typedef struct {
   char *items;
   size_t count;

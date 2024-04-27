@@ -29,24 +29,25 @@ typedef volatile struct {
 } GTabHeader;
 
 typedef volatile struct {
-  char numerator;
-  char denominator;
+  u_int16_t numerator;
+  u_int16_t denominator;
+  // char lol[2];
 } TimeSignature;
 
-typedef struct {
-  int noteID;
-  int deltaTime;
+typedef volatile struct {
+  u_int16_t noteID;
+  u_int32_t deltaTime;
 } Event;
 
-typedef struct {
-  size_t count;
-  size_t capacity;
+typedef volatile struct {
+  u_int32_t count; // use uint32 instead of size_t incase multiplatform issues
+  u_int32_t capacity;
   Event* items; // items at end, easier to unpack
 } EventList;
 
-typedef struct {
-  int bpm;
+typedef volatile struct {
   TimeSignature timeSignature;
+  u_int32_t bpm; // bigger than needed for padding/alignment reasons
   EventList events;
 } Bar;
 
@@ -55,4 +56,4 @@ typedef struct {
 typedef struct {
   GTabHeader header;
   Bar* bars;
-} Guitar;
+} GuitarTab;
