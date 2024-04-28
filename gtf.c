@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define FRETS 22
+
 #define MAGIC_BYTES                                                            \
   { 0x47, 0x54, 0x41, 0x42 }
 
@@ -57,7 +59,9 @@ const char *note_enum_str(int note) {
   }
 }
 
-ZString format_tab(GuitarTab tab) {}
+void format_tab(GuitarTab *tab) {
+  printf("tuning: %s\n", note_enum_str(tab->header.tuning[1]));
+}
 
 int write_gtab(GTabHeader *header) {
   FILE *file = fopen("mytab.gtab", "wb");
@@ -74,27 +78,42 @@ int write_gtab(GTabHeader *header) {
   // test data
   TimeSignature timeSig = {4, 4};
   EventList events = {0};
-  Event event = {10, 4};
-  Event event2 = {13, 10};
+  // Event tempoEvent = {SetTempoEvent, };
 
-  da_append(&events, event);
-  da_append(&events, event2);
-  events.capacity += 512;
+  // create event on stack, just for testing
+  create_event(tempoEvent, SetTempo, 120);
+  create_event(note1, NoteOn, 4, 0, 100);
+  create_event(note2, NoteOn, 4, 4, 20);
 
-  Bar bar = {timeSig, 120, events};
-  // EventList uses pointers so it must be unpacked first
-  size_t bar_unpacked_size = sizeof(Bar) - sizeof(EventList);
-  bytes_written = fwrite(&bar, bar_unpacked_size, 1, file);
-  bytes_written = fwrite(&bar.events, sizeof(u_int32_t) * 2, 1, file);
+  // Event event = {NoteOn, 4};
+  // Event event2 = {NoteOn, 10};
 
-  fwrite(events.items, sizeof(Event), events.count, file);
+  da_append(&events, tempoEvent);
+  da_append(&events, note1);
+  da_append(&events, note2);
 
-  // for (int i = 0; i < events.count; i++) {
-  // }
-
+  fwrite(&events, sizeof(u_int32_t) * 2, 1, file);
+  for (int i = 0; i < events.count; i++) {
+    EventType type = events.items[i].type;
+    size_t size = 0;
+    switch (type) {
+    case SetTempo:
+      size = sizeof(SetTempoEvent);
+      break;
+    case NoteOn:
+      size = sizeof(NoteOnEvent);
+      break;
+    case SetTimeSignature:
+      // <#code #>
+      break;
+    }
+    fwrite(&type, sizeof(EventType), 1, file);
+    fwrite(events.items[i].data, size, 1, file);
+  }
+  
   // Unique code to specify the end of the file
   char end_bytes[4] = {0xFF, 0xF1, 0xFF, 0xF1};
-  bytes_written = fwrite(end_bytes, sizeof(end_bytes), 1, file);
+  // bytes_written = fwrite(end_bytes, sizeof(end_bytes), 1, file);
 
   fclose(file);
   return 1;
@@ -110,45 +129,47 @@ size_t reverse_endianness_size_t(size_t value) {
   return reversed_value;
 }
 
-Bar *read_bar(char *buffer, size_t i) {
-  Bar* bar;
-  bar = malloc(sizeof(Bar));
+// Bar *read_bar(char *buffer, size_t i) {
+//   Bar* bar;
+//   bar = malloc(sizeof(Bar));
 
-  memcpy(&bar->timeSignature, &buffer[i], sizeof(bar->timeSignature));
-  i += sizeof(bar->timeSignature);
-  memcpy(&bar->bpm, &buffer[i], sizeof(bar->bpm));
-  i += sizeof(bar->bpm);
+//   memcpy(&bar->timeSignature, &buffer[i], sizeof(bar->timeSignature));
+//   i += sizeof(bar->timeSignature);
+//   memcpy(&bar->bpm, &buffer[i], sizeof(bar->bpm));
+//   i += sizeof(bar->bpm);
 
-  printf("BPM: %d\n", bar->bpm);
-  printf("Time signature: %d/%d\n", bar->timeSignature.numerator,
-         bar->timeSignature.denominator);
+//   printf("BPM: %d\n", bar->bpm);
+//   printf("Time signature: %d/%d\n", bar->timeSignature.numerator,
+//          bar->timeSignature.denominator);
 
-  printf("i: %zu\n", i);
-  // EventList eventList = {0};
-  // bar.events = eventList;
+//   printf("i: %zu\n", i);
+//   // EventList eventList = {0};
+//   // bar.events = eventList;
 
-  memcpy(&bar->events.count, &buffer[i], sizeof(u_int32_t));
-  printf("Event count: %u\n", bar->events.count);
-  i += sizeof(u_int32_t);
+//   memcpy(&bar->events.count, &buffer[i], sizeof(u_int32_t));
+//   printf("Event count: %u\n", bar->events.count);
+//   i += sizeof(u_int32_t);
 
-  memcpy(&bar->events.capacity, &buffer[i], sizeof(u_int32_t));
-  printf("Capacity count: %u\n", bar->events.capacity);
-  i += sizeof(u_int32_t);
+//   memcpy(&bar->events.capacity, &buffer[i], sizeof(u_int32_t));
+//   printf("Capacity count: %u\n", bar->events.capacity);
+//   i += sizeof(u_int32_t);
 
-  bar->events.items = malloc(bar->events.capacity);
+//   bar->events.items = malloc(bar->events.capacity);
 
-  for (size_t e = 0; e < bar->events.count; e++) {
-    Event event = {0};
-    memcpy(&event, &buffer[i + (e * sizeof(Event))], sizeof(Event));
-    bar->events.items[e] = event;
-  }
-  for (size_t j = 0; j < bar->events.count; j++) {
-    printf("note: %d, time %d\n", bar->events.items[j].noteID,
-           bar->events.items[j].deltaTime);
-  }
+//   for (size_t e = 0; e < bar->events.count; e++) {
+//     Event event = {0};
+//     memcpy(&event, &buffer[i + (e * sizeof(Event))], sizeof(Event));
+//     bar->events.items[e] = event;
+//   }
+//   for (size_t j = 0; j < bar->events.count; j++) {
+//     printf("note: %d, time %d\n", bar->events.items[j].noteID,
+//            bar->events.items[j].deltaTime);
+//   }
 
-  return bar;
-}
+//   return bar;
+// }
+
+void read_events(char *buffer, size_t i, EventList *eventList) {}
 
 int read_gtab() {
   char buffer[2048];
@@ -187,19 +208,18 @@ int read_gtab() {
   }
   printf("\n");
 
-  read_bar(&buffer, i);
-  // while (!end) {
-  //   printf("%c\n", buffer[i]);
+  // Bar* bar = read_bar(&buffer, i);
+  EventList *eventList = {0};
+  read_events(buffer, i, eventList);
 
-  //   if (!memcmp(&buffer[i], end_bytes, sizeof(end_bytes))) {
-  //     printf("end of\n");
-  //     end = 1;
-  //   }
-  //   else {
-  //     i++;
+  GuitarTab *tab;
 
-  //   }
-  // }
+  tab = malloc(sizeof(GuitarTab));
+
+  // tab->bars = bar;
+  tab->header = header;
+
+  format_tab(tab);
   return 0;
 }
 

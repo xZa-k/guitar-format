@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -14,13 +15,13 @@
   } while (0)
 
 void memcpy_with_endianness(void *dest, const void *src, size_t size) {
-    const uint8_t *src_ptr = (const uint8_t *)src;
-    uint8_t *dest_ptr = (uint8_t *)dest;
+  const uint8_t *src_ptr = (const uint8_t *)src;
+  uint8_t *dest_ptr = (uint8_t *)dest;
 
-    // Copy bytes in reverse order to perform endianness conversion
-    for (size_t i = 0; i < size; ++i) {
-        dest_ptr[size - 1 - i] = src_ptr[i];
-    }
+  // Copy bytes in reverse order to perform endianness conversion
+  for (size_t i = 0; i < size; ++i) {
+    dest_ptr[size - 1 - i] = src_ptr[i];
+  }
 }
 
 typedef struct {
@@ -55,6 +56,20 @@ typedef struct {
       assert((arr)->items != NULL && "Buy more RAM");                          \
     }                                                                          \
     (arr)->items[((arr)->count)++] = (item);                                   \
+  } while (0)
+
+#define da_string(arr, my_string)                                              \
+  do {                                                                         \
+    while (strlen(my_string) > (arr)->capacity) {                              \
+      (arr)->capacity = (arr)->capacity == 0                                   \
+                            ? DA_START_SIZE                                    \
+                            : (size_t)((arr)->capacity * 1.5);                 \
+      (arr)->items =                                                           \
+          realloc((arr)->items, (arr)->capacity * sizeof(*(arr)->items));      \
+      assert((arr)->items != NULL && "Buy more RAM");                          \
+    }                                                                          \
+    (arr)->items[((arr)->count)] = (my_string);                                     \
+    (arr)->count += strlen(my_string);                                         \
   } while (0)
 
 #define da_bubble_reverse(arr)                                                 \
