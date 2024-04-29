@@ -31,16 +31,18 @@ typedef enum : u_int16_t {
 } EventType;
 
 typedef struct {
-  u_int16_t noteID;
   u_int32_t deltaTime;
+  u_int16_t noteID;
   u_int32_t duration;
 } NoteOnEvent;
 
 typedef struct {
+  u_int32_t deltaTime;
   u_int32_t tempo;
 } SetTempoEvent;
 
 typedef struct {
+  u_int32_t deltaTime;
   TimeSignature timeSignature;
 } SetTimeSignatureEvent;
 
@@ -75,3 +77,4 @@ typedef struct {
 #define create_event(name, type, ...) \
     type##Event event_data_##name = {__VA_ARGS__}; \
     Event name = {type, (void*)&(event_data_##name)}
+

@@ -1,6 +1,7 @@
 #include "gtf.h"
 #include "basicz.h"
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,6 +60,22 @@ const char *note_enum_str(int note) {
   }
 }
 
+size_t size_of_event(EventType type) {
+  size_t size = 0;
+  switch (type) {
+    case SetTempo:
+      size = sizeof(SetTempoEvent);
+      break;
+    case NoteOn:
+      size = sizeof(NoteOnEvent);
+      break;
+    case SetTimeSignature:
+      size = sizeof(SetTimeSignatureEvent);
+      break;
+  }
+  return size;
+}
+
 void format_tab(GuitarTab *tab) {
   printf("tuning: %s\n", note_enum_str(tab->header.tuning[1]));
 }
@@ -92,42 +109,24 @@ int write_gtab(GTabHeader *header) {
   da_append(&events, note1);
   da_append(&events, note2);
 
-  fwrite(&events, sizeof(u_int32_t) * 2, 1, file);
+  // Capacity is only needed for runtime, so just write count
+  fwrite(&events.count, sizeof(u_int32_t), 1, file);
+  
   for (int i = 0; i < events.count; i++) {
     EventType type = events.items[i].type;
-    size_t size = 0;
-    switch (type) {
-    case SetTempo:
-      size = sizeof(SetTempoEvent);
-      break;
-    case NoteOn:
-      size = sizeof(NoteOnEvent);
-      break;
-    case SetTimeSignature:
-      // <#code #>
-      break;
-    }
+    size_t size = size_of_event(type);
     fwrite(&type, sizeof(EventType), 1, file);
     fwrite(events.items[i].data, size, 1, file);
   }
-  
+
   // Unique code to specify the end of the file
-  char end_bytes[4] = {0xFF, 0xF1, 0xFF, 0xF1};
+  // char end_bytes[4] = {0xFF, 0xF1, 0xFF, 0xF1};
   // bytes_written = fwrite(end_bytes, sizeof(end_bytes), 1, file);
 
   fclose(file);
   return 1;
 }
-size_t reverse_endianness_size_t(size_t value) {
-  size_t reversed_value = 0;
-  size_t num_bytes = sizeof(value);
 
-  for (size_t i = 0; i < num_bytes; ++i) {
-    reversed_value |= ((value >> (8 * i)) & 0xFF) << (8 * (num_bytes - 1 - i));
-  }
-
-  return reversed_value;
-}
 
 // Bar *read_bar(char *buffer, size_t i) {
 //   Bar* bar;
@@ -169,7 +168,38 @@ size_t reverse_endianness_size_t(size_t value) {
 //   return bar;
 // }
 
-void read_events(char *buffer, size_t i, EventList *eventList) {}
+void read_events(char *buffer, size_t offset, EventList *eventList) {
+  
+  u_int32_t count;
+  memcpy(&count, &buffer[offset], sizeof(u_int32_t));
+  offset += sizeof(u_int32_t);
+
+  printf("event count: %d\n", count);
+
+  for (int i = 0; i < count; i++) {
+    EventType type;
+    memcpy(&type, &buffer[offset], sizeof(EventType));
+    printf("Type: %x\n", type);
+    offset += sizeof(EventType);
+
+    void* data = malloc(size_of_event(type));
+    
+    memcpy(data, &buffer[offset], size_of_event(type));
+
+    Event event;
+    event.type = type;
+    event.data = data;
+    // printf("tempo: %d\n", ((SetTempoEvent*)event.data)->tempo);
+
+    // eventList->items[0] = event;
+    // eventList->count++;
+
+    da_append(eventList, event);
+
+    offset += size_of_event(type);
+  }
+  // printf("data: %d\n", ((NoteOnEvent*)eventList->items[1].data)->noteID);
+}
 
 int read_gtab() {
   char buffer[2048];
@@ -208,9 +238,15 @@ int read_gtab() {
   }
   printf("\n");
 
-  // Bar* bar = read_bar(&buffer, i);
-  EventList *eventList = {0};
-  read_events(buffer, i, eventList);
+
+  // Initalise eventlist
+  // EventList *eventList;
+  
+  // eventList = malloc(DA_START_SIZE);
+  // eventList->capacity = 0;
+  // eventList->count = 0;
+  EventList eventList = {0};
+  read_events(buffer, i, &eventList);
 
   GuitarTab *tab;
 
