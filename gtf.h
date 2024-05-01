@@ -16,6 +16,34 @@ typedef enum {
   Gs // G sharp
 } MusicalNote;
 
+// [0] Hammer on
+// [1] Pull off
+// [2] Slide on
+// [3] Slide off
+
+// [4] Vibrato on
+// [5] Palm mute
+// [6] Tapping
+// [7] Harmonic
+
+
+// [8] Bend half
+// [9] Bend full
+// [10 - 15] Spare
+
+typedef enum : u_int16_t {
+  HammerOn = 0x0001,
+  PullOff = 0x0002,
+  SlideOn = 0x0004,
+  SlideOff = 0x0008,
+  VibratoOn = 0x0010,
+  PalmMute = 0x0020,
+  Tapping = 0x0040,
+  Harmonic = 0x0080,
+  BendHalf = 0x0100,
+  BendFull = 0x0200,
+} ArticulationFlags;
+
 typedef volatile struct {
   u_int16_t numerator;
   u_int16_t denominator;
@@ -34,6 +62,7 @@ typedef struct {
   u_int32_t deltaTime;
   u_int16_t noteID;
   u_int32_t duration;
+  ArticulationFlags articulation;
 } NoteOnEvent;
 
 typedef struct {
@@ -72,3 +101,4 @@ typedef struct {
     type##Event event_data_##name = {__VA_ARGS__}; \
     Event name = {type, (void*)&(event_data_##name)}
 
+#define event_type_str(type) #type

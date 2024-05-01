@@ -63,22 +63,82 @@ const char *note_enum_str(int note) {
 size_t size_of_event(EventType type) {
   size_t size = 0;
   switch (type) {
-    case SetTempo:
-      size = sizeof(SetTempoEvent);
-      break;
-    case NoteOn:
-      size = sizeof(NoteOnEvent);
-      break;
-    case SetTimeSignature:
-      size = sizeof(SetTimeSignatureEvent);
-      break;
+  case SetTempo:
+    size = sizeof(SetTempoEvent);
+    break;
+  case NoteOn:
+    size = sizeof(NoteOnEvent);
+    break;
+  case SetTimeSignature:
+    size = sizeof(SetTimeSignatureEvent);
+    break;
   }
   return size;
 }
 
-char* note_beat(NoteOnEvent* event) {
-  u_int32_t bpm = 120;
+const char *type_to_string(EventType type) {
+  const char *event_strings[] = {
+      [NoteOn] = "NoteOn",
+      [SetTempo] = "SetTempo",
+      [SetTimeSignature] = "SetTimeSignature",
+  };
 
+  return event_strings[type];
+}
+
+const char *art_to_string(ArticulationFlags art) {
+  const char *art_strings[] = {
+    [HammerOn] = "HammerOn",
+    [PullOff] = "PullOff",
+    [SlideOn] = "SlideOn",
+    [SlideOff] = "SlideOff",
+    [VibratoOn] = "VibratoOn",
+    [PalmMute] = "PalmMute",
+    [Tapping] = "Tapping",
+    [Harmonic] = "Harmonic",
+    [BendHalf] = "BendHalf",
+    [BendFull] = "BendFull",
+  };
+
+  return art_strings[art];
+}
+
+// ZString list_articulations(ArticulationFlags art) {
+  
+// }
+
+char *note_beat(NoteOnEvent *event) { u_int32_t bpm = 120; }
+
+
+void print_events(GuitarTab *tab) {
+  printf("events:: \n");
+  for (int i = 0; i < tab->events->count; i++) {
+    Event e = tab->events->items[i];
+    printf("{\ntype=%s,\n", type_to_string(e.type));
+
+    switch (e.type) {
+    case SetTempo:
+      printf("[.deltaTime=%d,\n.tempo=%d] }\n",
+             ((SetTempoEvent *)e.data)->deltaTime,
+             ((SetTempoEvent *)e.data)->tempo);
+      break;
+    case NoteOn:
+      printf("[.deltaTime=%d,\n.noteID=%d,\n.duration=%d,\narticulation=%u]}\n",
+             ((NoteOnEvent *)e.data)->deltaTime,
+             ((NoteOnEvent *)e.data)->noteID,
+             ((NoteOnEvent *)e.data)->duration,
+             ((NoteOnEvent *)e.data)->articulation);
+      break;
+    case SetTimeSignature:
+      printf("[.deltaTime=%d,\n.numerator=%d,\n.denominator=%d]}\n",
+             ((SetTimeSignatureEvent *)e.data)->deltaTime,
+             ((SetTimeSignatureEvent *)e.data)->timeSignature.numerator,
+             ((SetTimeSignatureEvent *)e.data)->timeSignature.denominator);
+
+      break;
+    }
+    printf("\n");
+  }
 }
 
 void format_tab(GuitarTab *tab) {
@@ -105,25 +165,25 @@ int write_gtab(GTabHeader *header) {
   // create event on stack, just for testing
   create_event(tempoEvent, SetTempo, 0, 120);
   create_event(note1, NoteOn, 4, 0, 100);
-  create_event(note2, NoteOn, 4, 4, 20);
+  create_event(note2, NoteOn, 4, 4, 20, HammerOn | PalmMute);
 
   da_append(&events, tempoEvent);
 
-  
+#ifdef TEST_MODE
   // test larger files
   for (int i = 0; i < 500; i++) {
-    NoteOnEvent* event_data_notey = malloc(sizeof(NoteOnEvent));
+    NoteOnEvent *event_data_notey = malloc(sizeof(NoteOnEvent));
     event_data_notey->noteID = 16;
     event_data_notey->deltaTime = i;
     event_data_notey->duration = 20;
 
-
     // Event* notey = {NoteOn, (void *)&(event_data_notey)};
-    Event* notey = malloc(sizeof(Event));
+    Event *notey = malloc(sizeof(Event));
     notey->type = NoteOn;
     notey->data = event_data_notey;
     da_append(&events, *notey);
   }
+#endif
 
   // Event event = {NoteOn, 4};
   // Event event2 = {NoteOn, 10};
@@ -133,7 +193,7 @@ int write_gtab(GTabHeader *header) {
 
   // Capacity is only needed for runtime, so just write count
   fwrite(&events.count, sizeof(u_int32_t), 1, file);
-  
+
   for (int i = 0; i < events.count; i++) {
     EventType type = events.items[i].type;
     size_t size = size_of_event(type);
@@ -159,7 +219,6 @@ void read_events(char *buffer, size_t offset, EventList *eventList) {
     count = eventList->count;
     printf("nahhh\n");
   }
-  
 
   printf("event count: %d\n", count);
 
@@ -169,11 +228,11 @@ void read_events(char *buffer, size_t offset, EventList *eventList) {
     memcpy(&type, &buffer[offset], sizeof(EventType));
     printf("Type: %x\n", type);
     offset += sizeof(EventType);
-    if (offset >= 2048 - size_of_event(type)) return;
+    if (offset >= 2048 - size_of_event(type))
+      return;
 
+    void *data = malloc(size_of_event(type));
 
-    void* data = malloc(size_of_event(type));
-    
     memcpy(data, &buffer[offset], size_of_event(type));
 
     Event event;
@@ -183,9 +242,9 @@ void read_events(char *buffer, size_t offset, EventList *eventList) {
     // eventList->items[0] = event;
     // eventList->count++;
     if (type == SetTempo) {
-      printf("tempo: %d\n", ((SetTempoEvent*)(event.data))->tempo);
+      printf("tempo: %d\n", ((SetTempoEvent *)(event.data))->tempo);
     } else if (type == NoteOn) {
-      printf("Note deltaTime: %d\n", ((NoteOnEvent*)(event.data))->deltaTime);
+      printf("Note deltaTime: %d\n", ((NoteOnEvent *)(event.data))->deltaTime);
     }
     da_append(eventList, event);
 
@@ -235,7 +294,7 @@ int read_gtab() {
   do {
     read_events(buffer, i, &eventList);
     fread(buffer, sizeof(char), sizeof(buffer), file);
-  }while (!feof(file));
+  } while (!feof(file));
 
   GuitarTab *tab;
 
@@ -243,17 +302,14 @@ int read_gtab() {
 
   // tab->bars = bar;
   tab->header = header;
+  tab->events = &eventList;
 
-  format_tab(tab);
+  // format_tab(tab);
+  print_events(tab);
   return 0;
 }
 
 int main() {
-  printf("Hello!\n");
-  #ifdef __GNUC__
-    // note that clang 3.7 declares itself as a gcc 4.2"
-    printf ("gcc detected version %d.%d\n", __GNUC__, __GNUC_MINOR__);
-#endif
 
   GTabHeader header = {MAGIC_BYTES, {E, A, D, G, B, E}};
   write_gtab(&header);

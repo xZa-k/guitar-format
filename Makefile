@@ -10,6 +10,7 @@ test: $(PROJECT_NAME).c
 	./main
 
 release: $(PROJECT_NAME).c
-	$(CC) $(LINK_FLAGS) -O2 -o ./main
+	$(CC) $(LINK_FLAGS) $(PROJECT_NAME).c -O2 -o ./main
+	
 run: release
 	./main

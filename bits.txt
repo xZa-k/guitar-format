@@ -1,0 +1,19 @@
+
+
+0000 0000 | 0000 0000
+
+
+[0] Hammer on
+[1] Pull off
+[2] Slide on
+[3] Slide off
+
+[4] Vibrato on
+[5] Palm mute
+[6] Tapping
+[7] Harmonic
+
+
+[8] Bend half
+[9] Bend full
+[10 - 15] Spare
