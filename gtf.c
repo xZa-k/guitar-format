@@ -169,13 +169,14 @@ int write_gtab(GTabHeader *header) {
 
   da_append(&events, tempoEvent);
 
-#ifdef TEST_MODE
+// #ifdef TEST_MODE
   // test larger files
   for (int i = 0; i < 500; i++) {
     NoteOnEvent *event_data_notey = malloc(sizeof(NoteOnEvent));
     event_data_notey->noteID = 16;
     event_data_notey->deltaTime = i;
     event_data_notey->duration = 20;
+    event_data_notey->articulation = 0;
 
     // Event* notey = {NoteOn, (void *)&(event_data_notey)};
     Event *notey = malloc(sizeof(Event));
@@ -183,7 +184,7 @@ int write_gtab(GTabHeader *header) {
     notey->data = event_data_notey;
     da_append(&events, *notey);
   }
-#endif
+// #endif
 
   // Event event = {NoteOn, 4};
   // Event event2 = {NoteOn, 10};
