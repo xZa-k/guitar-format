@@ -76,6 +76,11 @@ size_t size_of_event(EventType type) {
   return size;
 }
 
+char* note_beat(NoteOnEvent* event) {
+  u_int32_t bpm = 120;
+
+}
+
 void format_tab(GuitarTab *tab) {
   printf("tuning: %s\n", note_enum_str(tab->header.tuning[1]));
 }
@@ -98,14 +103,31 @@ int write_gtab(GTabHeader *header) {
   // Event tempoEvent = {SetTempoEvent, };
 
   // create event on stack, just for testing
-  create_event(tempoEvent, SetTempo, 120);
+  create_event(tempoEvent, SetTempo, 0, 120);
   create_event(note1, NoteOn, 4, 0, 100);
   create_event(note2, NoteOn, 4, 4, 20);
+
+  da_append(&events, tempoEvent);
+
+  
+  // test larger files
+  for (int i = 0; i < 500; i++) {
+    NoteOnEvent* event_data_notey = malloc(sizeof(NoteOnEvent));
+    event_data_notey->noteID = 16;
+    event_data_notey->deltaTime = i;
+    event_data_notey->duration = 20;
+
+
+    // Event* notey = {NoteOn, (void *)&(event_data_notey)};
+    Event* notey = malloc(sizeof(Event));
+    notey->type = NoteOn;
+    notey->data = event_data_notey;
+    da_append(&events, *notey);
+  }
 
   // Event event = {NoteOn, 4};
   // Event event2 = {NoteOn, 10};
 
-  da_append(&events, tempoEvent);
   da_append(&events, note1);
   da_append(&events, note2);
 
@@ -127,60 +149,28 @@ int write_gtab(GTabHeader *header) {
   return 1;
 }
 
-
-// Bar *read_bar(char *buffer, size_t i) {
-//   Bar* bar;
-//   bar = malloc(sizeof(Bar));
-
-//   memcpy(&bar->timeSignature, &buffer[i], sizeof(bar->timeSignature));
-//   i += sizeof(bar->timeSignature);
-//   memcpy(&bar->bpm, &buffer[i], sizeof(bar->bpm));
-//   i += sizeof(bar->bpm);
-
-//   printf("BPM: %d\n", bar->bpm);
-//   printf("Time signature: %d/%d\n", bar->timeSignature.numerator,
-//          bar->timeSignature.denominator);
-
-//   printf("i: %zu\n", i);
-//   // EventList eventList = {0};
-//   // bar.events = eventList;
-
-//   memcpy(&bar->events.count, &buffer[i], sizeof(u_int32_t));
-//   printf("Event count: %u\n", bar->events.count);
-//   i += sizeof(u_int32_t);
-
-//   memcpy(&bar->events.capacity, &buffer[i], sizeof(u_int32_t));
-//   printf("Capacity count: %u\n", bar->events.capacity);
-//   i += sizeof(u_int32_t);
-
-//   bar->events.items = malloc(bar->events.capacity);
-
-//   for (size_t e = 0; e < bar->events.count; e++) {
-//     Event event = {0};
-//     memcpy(&event, &buffer[i + (e * sizeof(Event))], sizeof(Event));
-//     bar->events.items[e] = event;
-//   }
-//   for (size_t j = 0; j < bar->events.count; j++) {
-//     printf("note: %d, time %d\n", bar->events.items[j].noteID,
-//            bar->events.items[j].deltaTime);
-//   }
-
-//   return bar;
-// }
-
 void read_events(char *buffer, size_t offset, EventList *eventList) {
-  
   u_int32_t count;
-  memcpy(&count, &buffer[offset], sizeof(u_int32_t));
-  offset += sizeof(u_int32_t);
+
+  if (eventList->count == 0) {
+    memcpy(&count, &buffer[offset], sizeof(u_int32_t));
+    offset += sizeof(u_int32_t);
+  } else {
+    count = eventList->count;
+    printf("nahhh\n");
+  }
+  
 
   printf("event count: %d\n", count);
 
   for (int i = 0; i < count; i++) {
+    // if (offset >= 2048 - sizeof(EventType)) return;
     EventType type;
     memcpy(&type, &buffer[offset], sizeof(EventType));
     printf("Type: %x\n", type);
     offset += sizeof(EventType);
+    if (offset >= 2048 - size_of_event(type)) return;
+
 
     void* data = malloc(size_of_event(type));
     
@@ -190,10 +180,13 @@ void read_events(char *buffer, size_t offset, EventList *eventList) {
     event.type = type;
     event.data = data;
     // printf("tempo: %d\n", ((SetTempoEvent*)event.data)->tempo);
-
     // eventList->items[0] = event;
     // eventList->count++;
-
+    if (type == SetTempo) {
+      printf("tempo: %d\n", ((SetTempoEvent*)(event.data))->tempo);
+    } else if (type == NoteOn) {
+      printf("Note deltaTime: %d\n", ((NoteOnEvent*)(event.data))->deltaTime);
+    }
     da_append(eventList, event);
 
     offset += size_of_event(type);
@@ -238,15 +231,11 @@ int read_gtab() {
   }
   printf("\n");
 
-
-  // Initalise eventlist
-  // EventList *eventList;
-  
-  // eventList = malloc(DA_START_SIZE);
-  // eventList->capacity = 0;
-  // eventList->count = 0;
   EventList eventList = {0};
-  read_events(buffer, i, &eventList);
+  do {
+    read_events(buffer, i, &eventList);
+    fread(buffer, sizeof(char), sizeof(buffer), file);
+  }while (!feof(file));
 
   GuitarTab *tab;
 
@@ -261,6 +250,10 @@ int read_gtab() {
 
 int main() {
   printf("Hello!\n");
+  #ifdef __GNUC__
+    // note that clang 3.7 declares itself as a gcc 4.2"
+    printf ("gcc detected version %d.%d\n", __GNUC__, __GNUC_MINOR__);
+#endif
 
   GTabHeader header = {MAGIC_BYTES, {E, A, D, G, B, E}};
   write_gtab(&header);

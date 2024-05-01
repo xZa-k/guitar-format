@@ -45,6 +45,8 @@ typedef struct {
     (arr)->count--;                                                            \
   } while (0)
 
+// heavily influenced by tsodings nob.h
+// https://github.com/tsoding/nobuild
 #define da_append(arr, item)                                                   \
   do {                                                                         \
     if ((arr)->count >= (arr)->capacity) {                                     \

@@ -57,16 +57,10 @@ typedef volatile struct {
 } Event;
 
 typedef volatile struct {
-  u_int32_t count; // use uint32 instead of size_t incase multiplatform issues
+  u_int32_t count; // use uint32 instead of size_t incase of multiplatform issues
   u_int32_t capacity;
   Event *items; // items at end, easier to unpack
 } EventList;
-
-// typedef volatile struct {
-//   TimeSignature timeSignature;
-//   u_int32_t bpm; // bigger than needed for padding/alignment reasons
-//   EventList events;
-// } Bar;
 
 typedef struct {
   GTabHeader header;
