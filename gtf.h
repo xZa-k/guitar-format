@@ -112,3 +112,22 @@ typedef struct {
     Event name = {type, (void*)&(event_data_##name)}
 
 #define event_type_str(type) #type
+
+#define eventlist_sort(arr, swap) \
+  do { \
+    typeof(*(arr)) tmp = {0}; \
+    tmp.count = (arr)->count; \
+    tmp.capacity = (arr)->capacity; \
+    tmp.items = malloc(tmp.capacity * sizeof(*(arr)->items)); \
+    memcpy(tmp.items, (arr)->items, tmp.capacity * sizeof(*(arr)->items)); \
+    if ((arr)->count <= 1) \
+      break; \
+    for (size_t p = 0; p < tmp.count; p++) { \
+      for (size_t i = p + 1; i < tmp.count; i++) { \
+        if ((arr)->items[p] > (arr)->items[i]) { \
+          swap((arr)->items[p], (arr)->items[i]); \
+        } \
+      } \
+    } \
+  } while (0)
+

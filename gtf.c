@@ -77,6 +77,21 @@ size_t size_of_event(EventType type) {
   return size;
 }
 
+int compare_event(Event* e1, Event* e2) {
+  u_int32_t e1_delta_time;
+  // first entry in data is always deltatime;
+  memcpy(&e1_delta_time, e1->data, sizeof(u_int32_t));
+
+  u_int32_t e2_delta_time;
+  // first entry in data is always deltatime;
+  memcpy(&e2_delta_time, e2->data, sizeof(u_int32_t));
+
+  return e1_delta_time - e2_delta_time;
+
+}
+
+
+
 const char *type_to_string(EventType type) {
   const char *event_strings[] = {
       [NoteOn] = "NoteOn",
@@ -184,9 +199,6 @@ void print_events(GuitarTab *tab) {
   }
 }
 
-void format_tab(GuitarTab *tab) {
-  printf("tuning: %s\n", note_enum_str(tab->header.tuning[1]));
-}
 
 int write_gtab(GTabHeader *header) {
   FILE *file = fopen("mytab.gtab", "wb");
@@ -197,7 +209,6 @@ int write_gtab(GTabHeader *header) {
   }
 
   // Writes the header first
-  printf("Header magic: %s\n", header->magic);
   size_t bytes_written = fwrite(header, sizeof(GTabHeader), 1, file);
 
   // test data
@@ -216,7 +227,6 @@ int write_gtab(GTabHeader *header) {
   // test larger files
   for (int i = 0; i < 2000; i++) {
     NoteOnEvent *event_data_notey = malloc(sizeof(NoteOnEvent));
-    printf("i: %d\n", i);
     event_data_notey->deltaTime = i;
     event_data_notey->duration = 500000;
     event_data_notey->noteID = 10;
@@ -235,7 +245,12 @@ int write_gtab(GTabHeader *header) {
   // Event event2 = {NoteOn, 10};
 
   da_append(&events, note1);
+
+  create_event(tempoEvent2, SetTempo, 0, 120);
+  da_append(&events, tempoEvent2);
+
   da_append(&events, note2);
+
 
   // Capacity is only needed for runtime, so just write count
   fwrite(&events.count, sizeof(u_int32_t), 1, file);
@@ -371,11 +386,7 @@ int read_gtab() {
   memcpy(header.tuning, &buffer[i], sizeof(header.tuning));
   i += sizeof(header.tuning);
 
-  printf("the tuning is: ");
-  for (size_t i = 0; i < sizeof(header.tuning); i++) {
-    printf("%s ", note_enum_str(header.tuning[i]));
-  }
-  printf("\n");
+  
 
   EventList eventList = {0};
   // int end_of_file = feof(file);
@@ -395,8 +406,16 @@ int read_gtab() {
   tab->header = header;
   tab->events = &eventList;
 
-  // format_tab(tab);
+  #ifdef TEST_MODE
   print_events(tab);
+  printf("Magic number valid\n");
+  printf("Magic number: %.4s\n", magic);
+  printf("the tuning is: ");
+  for (size_t i = 0; i < sizeof(header.tuning); i++) {
+    printf("%s ", note_enum_str(header.tuning[i]));
+  }
+  printf("\n");
+  #endif
   return 0;
 }
 

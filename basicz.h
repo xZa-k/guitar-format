@@ -14,6 +14,7 @@
     b = c;                                                                     \
   } while (0)
 
+
 void memcpy_with_endianness(void *dest, const void *src, size_t size) {
   const uint8_t *src_ptr = (const uint8_t *)src;
   uint8_t *dest_ptr = (uint8_t *)dest;
@@ -106,8 +107,8 @@ typedef struct {
 //   do { \
 //     typeof(*(arr)) tmp = {0}; \
 //     tmp.count = (arr)->count; \
-//     tmp.capacity = (arr)->capacity; \
-//     tmp.items = malloc((arr)->capacity); \
+//     tmp.capacity = (arr)->count; \
+//     tmp.items = malloc(tmp.capacity * sizeof(items)); \
 //     memcpy(tmp.items, (arr)->items, (arr)->capacity); \
 //     if ((arr)->count <= 1) \
 //       break; \
@@ -119,6 +120,7 @@ typedef struct {
 //       } \
 //     } \
 //   } while (0)
+
 
 // #define da_append_many()
 
