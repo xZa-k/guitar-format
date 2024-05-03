@@ -16,15 +16,6 @@ typedef enum {
   Gs // G sharp
 } MusicalNote;
 
-typedef enum {
-  WholeNote,
-  HalfNote,
-  QuaterNote,
-  EighthNote,
-  SixteenthNote,
-  ThirtySndNote
-} NoteLength;
-
 // [0] Hammer on
 // [1] Pull off
 // [2] Slide on
@@ -68,19 +59,19 @@ typedef enum : u_int16_t {
 } EventType;
 
 typedef struct {
-  u_int64_t deltaTime;
+  u_int32_t deltaTime;
   u_int16_t noteID;
-  u_int64_t duration;
+  u_int32_t duration;
   ArticulationFlags articulation;
 } NoteOnEvent;
 
 typedef struct {
-  u_int64_t deltaTime;
+  u_int32_t deltaTime;
   u_int32_t tempo;
 } SetTempoEvent;
 
 typedef struct {
-  u_int64_t deltaTime;
+  u_int32_t deltaTime;
   TimeSignature timeSignature;
 } SetTimeSignatureEvent;
 
@@ -109,3 +100,5 @@ typedef struct {
 #define create_event(name, type, ...) \
     type##Event event_data_##name = {__VA_ARGS__}; \
     Event name = {type, (void*)&(event_data_##name)}
+
+#define event_type_str(type) #type

@@ -8,7 +8,6 @@
 #include <string.h>
 
 #define FRETS 22
-#define MICRO_SECOND 1000000
 
 #define MAGIC_BYTES                                                            \
   { 0x47, 0x54, 0x41, 0x42 }
@@ -89,68 +88,29 @@ const char *type_to_string(EventType type) {
 
 const char *art_to_string(ArticulationFlags art) {
   const char *art_strings[] = {
-      [HammerOn] = "HammerOn",   [PullOff] = "PullOff",
-      [SlideOn] = "SlideOn",     [SlideOff] = "SlideOff",
-      [VibratoOn] = "VibratoOn", [PalmMute] = "PalmMute",
-      [Tapping] = "Tapping",     [Harmonic] = "Harmonic",
-      [BendHalf] = "BendHalf",   [BendFull] = "BendFull",
+    [HammerOn] = "HammerOn",
+    [PullOff] = "PullOff",
+    [SlideOn] = "SlideOn",
+    [SlideOff] = "SlideOff",
+    [VibratoOn] = "VibratoOn",
+    [PalmMute] = "PalmMute",
+    [Tapping] = "Tapping",
+    [Harmonic] = "Harmonic",
+    [BendHalf] = "BendHalf",
+    [BendFull] = "BendFull",
   };
 
   return art_strings[art];
 }
 
-const char *length_to_string(NoteLength length) {
-  const char *length_strings[] = {
-      [WholeNote] = "WholeNote",  [HalfNote] = "HalfNote",      [QuaterNote] = "QuaterNote",
-      [EighthNote] = "EighthNote", [SixteenthNote] = "SixteenthNote", [ThirtySndNote] = "ThirtySndNote",
-  };
-
-  return length_strings[length];
-}
-
 // ZString list_articulations(ArticulationFlags art) {
-
+  
 // }
 
-u_int32_t get_quater_note(NoteOnEvent *event, TimeSignature timeSig,
-                          u_int32_t tempo) {
-  u_int64_t numer = timeSig.numerator * MICRO_SECOND;
-  u_int64_t denom = timeSig.denominator * MICRO_SECOND;
-  // u_int32_t fraction_of_measure = 1.f / denom;
+char *note_beat(NoteOnEvent *event) { u_int32_t bpm = 120; }
 
-  u_int64_t one_beat = (60 * MICRO_SECOND) / (tempo);
-  printf("one beat: %llu\n", one_beat);
-
-  u_int64_t note_length = (one_beat * numer) / denom;
-
-  printf("q note: %llu\n", note_length);
-  return note_length;
-}
-
-NoteLength note_type(NoteOnEvent *event, TimeSignature timeSig,
-                     u_int32_t tempo) {
-  float quater_note = get_quater_note(event, timeSig, tempo);
-
-  // could use maths but this is easier to read/understand
-  if (event->duration == quater_note * 4) {
-    return WholeNote;
-  } else if (event->duration == quater_note * 2) {
-    return HalfNote;
-  } else if (event->duration == quater_note) {
-    return QuaterNote;
-  } else if (event->duration == quater_note / 2) {
-    return EighthNote;
-  } else if (event->duration == quater_note / 4) {
-    return SixteenthNote;
-  } else if (event->duration == quater_note / 8) {
-    return ThirtySndNote;
-  } else {
-    return -1;
-  }
-}
 
 void print_events(GuitarTab *tab) {
-  TimeSignature timeSig = {4, 4};
   printf("events:: \n");
   for (int i = 0; i < tab->events->count; i++) {
     Event e = tab->events->items[i];
@@ -158,21 +118,19 @@ void print_events(GuitarTab *tab) {
 
     switch (e.type) {
     case SetTempo:
-      printf("[.deltaTime=%llu,\n.tempo=%d] }\n",
+      printf("[.deltaTime=%d,\n.tempo=%d] }\n",
              ((SetTempoEvent *)e.data)->deltaTime,
              ((SetTempoEvent *)e.data)->tempo);
       break;
     case NoteOn:
-      printf("[.deltaTime=%llu,\n.noteID=%d,\n.duration=%llu(%s),\narticulation=%"
-             "u]}\n",
+      printf("[.deltaTime=%d,\n.noteID=%d,\n.duration=%d,\narticulation=%u]}\n",
              ((NoteOnEvent *)e.data)->deltaTime,
-             ((NoteOnEvent *)e.data)->noteID, 
+             ((NoteOnEvent *)e.data)->noteID,
              ((NoteOnEvent *)e.data)->duration,
-             length_to_string(note_type(e.data, timeSig, 120)),
              ((NoteOnEvent *)e.data)->articulation);
       break;
     case SetTimeSignature:
-      printf("[.deltaTime=%llu,\n.numerator=%d,\n.denominator=%d]}\n",
+      printf("[.deltaTime=%d,\n.numerator=%d,\n.denominator=%d]}\n",
              ((SetTimeSignatureEvent *)e.data)->deltaTime,
              ((SetTimeSignatureEvent *)e.data)->timeSignature.numerator,
              ((SetTimeSignatureEvent *)e.data)->timeSignature.denominator);
@@ -211,23 +169,23 @@ int write_gtab(GTabHeader *header) {
 
   da_append(&events, tempoEvent);
 
-  // #ifdef TEST_MODE
+// #ifdef TEST_MODE
   // test larger files
   for (int i = 0; i < 500; i++) {
-    NoteOnEvent *event_data_note = malloc(sizeof(NoteOnEvent));
-    event_data_note->noteID = 16;
-    event_data_note->deltaTime = i;
-    event_data_note->duration = 500000;
-
-    event_data_note->articulation = 0;
+    NoteOnEvent *event_data_notey = malloc(sizeof(NoteOnEvent));
+    event_data_notey->noteID = ;
+    event_data_notey->deltaTime = i;
+    event_data_notey->duration = 20;
+    event_data_notey->articulation = 0;
+    event_data_notey->padding = 0;
 
     // Event* notey = {NoteOn, (void *)&(event_data_notey)};
     Event *notey = malloc(sizeof(Event));
     notey->type = NoteOn;
-    notey->data = event_data_note;
+    notey->data = event_data_notey;
     da_append(&events, *notey);
   }
-  // #endif
+// #endif
 
   // Event event = {NoteOn, 4};
   // Event event2 = {NoteOn, 10};
@@ -267,22 +225,24 @@ void read_events(char *buffer, size_t offset, EventList *eventList) {
   printf("event count: %d\n", count);
 
   for (int i = 0; i < count; i++) {
+    // if (offset >= 2048 - sizeof(EventType)) return;
     EventType type;
     memcpy(&type, &buffer[offset], sizeof(EventType));
     printf("Type: %x\n", type);
     offset += sizeof(EventType);
-    void *data = malloc(size_of_event(type));
-
-    // prevents overflows
     if (offset >= 2048 - size_of_event(type))
       return;
+
+    void *data = malloc(size_of_event(type));
 
     memcpy(data, &buffer[offset], size_of_event(type));
 
     Event event;
     event.type = type;
     event.data = data;
-
+    // printf("tempo: %d\n", ((SetTempoEvent*)event.data)->tempo);
+    // eventList->items[0] = event;
+    // eventList->count++;
     if (type == SetTempo) {
       printf("tempo: %d\n", ((SetTempoEvent *)(event.data))->tempo);
     } else if (type == NoteOn) {
@@ -291,7 +251,6 @@ void read_events(char *buffer, size_t offset, EventList *eventList) {
     da_append(eventList, event);
 
     offset += size_of_event(type);
-    // free(data);
   }
   // printf("data: %d\n", ((NoteOnEvent*)eventList->items[1].data)->noteID);
 }
@@ -349,11 +308,6 @@ int read_gtab() {
 
   // format_tab(tab);
   print_events(tab);
-
-  TimeSignature timeSig = {4, 4};
-  get_quater_note(tab->events->items[1].data, timeSig, 120);
-  NoteLength l = note_type(tab->events->items[1].data, timeSig, 120);
-  printf("note length: %d\n", l);
   return 0;
 }
 
@@ -362,6 +316,5 @@ int main() {
   GTabHeader header = {MAGIC_BYTES, {E, A, D, G, B, E}};
   write_gtab(&header);
   read_gtab();
-
   return 0;
 }
