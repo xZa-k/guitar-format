@@ -200,8 +200,8 @@ void print_events(GuitarTab *tab) {
 }
 
 
-int write_gtab(GTabHeader *header) {
-  FILE *file = fopen("mytab.gtab", "wb");
+int write_gtab(GTabHeader *header, const char* file_name) {
+  FILE *file = fopen(file_name, "wb");
 
   if (file == NULL) {
     perror("Error opening file");
@@ -419,10 +419,16 @@ int read_gtab() {
   return 0;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 
   GTabHeader header = {MAGIC_BYTES, {E, A, D, G, B, E}};
-  write_gtab(&header);
+  const char* file_name = "mytab.gtab";
+
+  if (argc >= 2) {
+    file_name = argv[1];
+  }
+  
+  write_gtab(&header, file_name);
   read_gtab();
   return 0;
 }
