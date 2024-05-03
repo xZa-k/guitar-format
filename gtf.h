@@ -16,6 +16,16 @@ typedef enum {
   Gs // G sharp
 } MusicalNote;
 
+typedef enum {
+  WholeNote,
+  HalfNote,
+  QuaterNote,
+  EighthNote,
+  SixteenthNote,
+  ThirtySndNote
+} NoteLength;
+
+
 // [0] Hammer on
 // [1] Pull off
 // [2] Slide on
@@ -60,8 +70,8 @@ typedef enum : u_int16_t {
 
 typedef struct {
   u_int32_t deltaTime;
-  u_int16_t noteID;
   u_int32_t duration;
+  u_int16_t noteID;
   ArticulationFlags articulation;
 } NoteOnEvent;
 
