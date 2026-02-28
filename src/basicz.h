@@ -14,7 +14,6 @@
     b = c;                                                                     \
   } while (0)
 
-
 void memcpy_with_endianness(void *dest, const void *src, size_t size) {
   const uint8_t *src_ptr = (const uint8_t *)src;
   uint8_t *dest_ptr = (uint8_t *)dest;
@@ -71,7 +70,7 @@ typedef struct {
           realloc((arr)->items, (arr)->capacity * sizeof(*(arr)->items));      \
       assert((arr)->items != NULL && "Buy more RAM");                          \
     }                                                                          \
-    (arr)->items[((arr)->count)] = (my_string);                                     \
+    (arr)->items[((arr)->count)] = (my_string);                                \
     (arr)->count += strlen(my_string);                                         \
   } while (0)
 
@@ -120,7 +119,6 @@ typedef struct {
 //       } \
 //     } \
 //   } while (0)
-
 
 // #define da_append_many()
 

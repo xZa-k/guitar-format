@@ -1,8 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum
-{
+typedef enum {
   A = 0,
   As, // A sharp
   B,
@@ -17,8 +16,7 @@ typedef enum
   Gs // G sharp
 } MusicalNote;
 
-typedef enum
-{
+typedef enum {
   WholeNote,
   HalfNote,
   QuaterNote,
@@ -52,8 +50,7 @@ typedef uint16_t ArticulationFlags;
 #define BendHalf 0x0100
 #define BendFull 0x0200
 
-typedef volatile struct
-{
+typedef volatile struct {
   uint16_t numerator;
   uint16_t denominator;
   // char lol[2];
@@ -66,75 +63,64 @@ typedef uint16_t EventType;
 #define SetTempo 0xFF02
 #define SetTimeSignature 0xFF03
 
-typedef struct
-{
+typedef struct {
   uint32_t deltaTime;
   uint32_t duration;
   uint16_t noteID;
   ArticulationFlags articulation;
 } NoteOnEvent;
 
-typedef struct
-{
+typedef struct {
   uint32_t deltaTime;
   uint32_t tempo;
 } SetTempoEvent;
 
-typedef struct
-{
+typedef struct {
   uint32_t deltaTime;
   TimeSignature timeSignature;
 } SetTimeSignatureEvent;
 
-typedef volatile struct
-{
+typedef volatile struct {
   char magic[4];
   char tuning[6]; // temp will change dynamically later
 } GTabHeader;
 
-typedef volatile struct
-{
+typedef volatile struct {
   EventType type;
   void *data; // depends on the type
 } Event;
 
-typedef volatile struct
-{
+typedef volatile struct {
   uint32_t count; // use uint32 instead of size_t incase of multiplatform issues
   uint32_t capacity;
   Event *items; // items at end, easier to unpack
 } EventList;
 
-typedef struct
-{
+typedef struct {
   GTabHeader header;
   EventList *events;
 } GuitarTab;
 
-#define create_event(name, type, ...)            \
-  type##Event event_data_##name = {__VA_ARGS__}; \
+#define create_event(name, type, ...)                                          \
+  type##Event event_data_##name = {__VA_ARGS__};                               \
   Event name = {type, (void *)&(event_data_##name)}
 
 #define event_type_str(type) #type
 
-#define eventlist_sort(arr, swap)                                          \
-  do                                                                       \
-  {                                                                        \
-    typeof(*(arr)) tmp = {0};                                              \
-    tmp.count = (arr)->count;                                              \
-    tmp.capacity = (arr)->capacity;                                        \
-    tmp.items = malloc(tmp.capacity * sizeof(*(arr)->items));              \
-    memcpy(tmp.items, (arr)->items, tmp.capacity * sizeof(*(arr)->items)); \
-    if ((arr)->count <= 1)                                                 \
-      break;                                                               \
-    for (size_t p = 0; p < tmp.count; p++)                                 \
-    {                                                                      \
-      for (size_t i = p + 1; i < tmp.count; i++)                           \
-      {                                                                    \
-        if ((arr)->items[p] > (arr)->items[i])                             \
-        {                                                                  \
-          swap((arr)->items[p], (arr)->items[i]);                          \
-        }                                                                  \
-      }                                                                    \
-    }                                                                      \
+#define eventlist_sort(arr, swap)                                              \
+  do {                                                                         \
+    typeof(*(arr)) tmp = {0};                                                  \
+    tmp.count = (arr)->count;                                                  \
+    tmp.capacity = (arr)->capacity;                                            \
+    tmp.items = malloc(tmp.capacity * sizeof(*(arr)->items));                  \
+    memcpy(tmp.items, (arr)->items, tmp.capacity * sizeof(*(arr)->items));     \
+    if ((arr)->count <= 1)                                                     \
+      break;                                                                   \
+    for (size_t p = 0; p < tmp.count; p++) {                                   \
+      for (size_t i = p + 1; i < tmp.count; i++) {                             \
+        if ((arr)->items[p] > (arr)->items[i]) {                               \
+          swap((arr)->items[p], (arr)->items[i]);                              \
+        }                                                                      \
+      }                                                                        \
+    }                                                                          \
   } while (0)
