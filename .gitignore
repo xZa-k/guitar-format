@@ -4,3 +4,5 @@ gtf
 mytab.gtab
 main
 .DS_Store
+build/
+.vscode
